@@ -1,0 +1,76 @@
+/*
+ * fir.c
+ *
+ *  Created on: Dec 24, 2016
+ *      Author: albertopetrucci
+ */
+
+
+/* Implementation of FIR filter */
+
+#include <stdlib.h>
+#include <string.h>
+#include "fir.h"
+
+/* Initialize FIR_filter struct
+ * Params:
+ *  int length -- number of filter coefficients
+ *  double *h  -- array of filter coefficients
+ * Returns:
+ *  FIR_filter *p -- on success
+ *  NULL          -- on error
+ */
+
+void FIR_init(FIR_filter *filter) {
+	filter->last_filtered_sample = 0;
+	filter->valid = 0;
+    filter->length = (int)(sizeof(h)/sizeof(double)) ;
+    filter->count = 0;
+    filter->h = h;
+    int i;
+    for (i=0; i < filter->length; ++i) {
+    		filter->delay_line[i] = 0;
+    }
+}
+
+/* Get next filtered sample of input signsl
+ * Params:
+ *  FIR_filter *filter -- pointer to filter structure
+ *  double input       -- input signl sample
+ * Returns:
+ *  double result -- filtered sample
+ */
+inline int FIR_get_sample(FIR_filter *filter, uint32_t input) {
+	double result = 0.0;
+    int i = 0;
+
+    //QUEUE
+    for (i=0; i < filter->length; ++i) {
+    		filter->delay_line[i] = filter->delay_line[i+1];
+    }
+    filter->delay_line[filter->length-1] = input;
+    for (i=0; i < filter->length; ++i) {
+    		result += filter->h[i] * filter->delay_line[i];
+    }
+    /*
+    filter->delay_line[filter->count] = input;
+    for (i=0; i < filter->length; ++i) {
+        result += filter->h[i] * filter->delay_line[(filter->length-1) - i];
+    }
+    if(++filter->count >= filter->length)
+        filter->count = 0;
+     */
+	filter->last_filtered_sample = (int)result;
+    filter->valid = 1;
+    return (int)result;
+}
+
+/* Free memory, allocated by filter
+ * Params:
+ *  FIR_filter *filter -- pointer to FIR_filter struct
+ */
+void FIR_destroy(FIR_filter *filter) {
+    free(filter->delay_line);
+    free(filter);
+}
+
