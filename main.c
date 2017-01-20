@@ -52,6 +52,13 @@
 	static FIR_filter fir;
 #endif
 
+//SPI DAR
+#define EXECUTE_DAC_OUTPUT 1
+#if EXECUTE_DAC_OUTPUT
+	#include "spi_dac.h"
+	static spi_dac_config dac;
+#endif
+
 
 //----------------------------------------------------------------
 
@@ -113,8 +120,8 @@ void ADCInit(void)
     ADCHardwareOversampleConfigure(ADC0_BASE, 64);
 
     ADCSequenceEnable(ADC0_BASE, 1);
-    ADCIntEnable(ADC0_BASE, 1);//Abilita l'interrupt dell'adc
-    IntEnable(INT_ADC0SS1);//Abilita lo specifico interrupt, ogni adc può avere più interrupt
+    ADCIntEnable(ADC0_BASE, 1);
+    IntEnable(INT_ADC0SS1);
 
     //  Timer (ADC Trigger)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
@@ -145,6 +152,11 @@ void ADC0SS1IntHandler(void)
     fftAddSample(&fft, ADC_OUT[0]);
     #endif
 
+    /*SPI DAC*/
+	#if EXECUTE_DAC_OUTPUT
+    SpiDACWrite(&dac, (uint16_t)ADC_OUT[0]);
+	#endif
+
     TimerEnable(TIMER0_BASE, TIMER_A);
 }
 
@@ -152,6 +164,7 @@ void Timer0IntHandler(void)
 {
     TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 }
+
 
 int newFile = 1;
 void SW1_IntHandler(void) {
@@ -198,6 +211,10 @@ int main(void)
 
 	#if EXECUTE_FFT
 	fftInit(&fft);
+	#endif
+
+	#if EXECUTE_DAC_OUTPUT
+	SpiDACInit(&dac);
 	#endif
 
 	InitConsole();
