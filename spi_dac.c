@@ -1,34 +1,6 @@
 #include "spi_dac.h"
 
 /* spi_dac.c - SPI Communication with MCP4921/MCP4922  */
-/*
-  All data are fixed-point int integers, in which -32768
-  to +32768 represent -1.0 to +1.0 respectively. Integer
-  arithmetic is used for speed, instead of the more natural
-  floating-point.
-
-  For the forward FFT (time -> freq), fixed scaling is
-  performed to prevent arithmetic overflow, and to map a 0dB
-  sine/cosine wave (i.e. amplitude = 32767) to two -6dB freq
-  coefficients. The return value is always 0.
-
-  For the inverse FFT (freq -> time), fixed scaling cannot be
-  done, as two 0dB coefficients would sum to a peak amplitude
-  of 64K, overflowing the 32k range of the fixed-point integers.
-  Thus, the fix_fft() routine performs variable scaling, and
-  returns a value which is the number of bits LEFT by which
-  the output must be shifted to get the actual amplitude
-  (i.e. if fix_fft() returns 3, each value of fr[] and fi[]
-  must be multiplied by 8 (2**3) for proper scaling.
-  Clearly, this cannot be done within fixed-point int
-  integers. In practice, if the result is to be used as a
-  filter, the scale_shift can usually be ignored, as the
-  result will be approximately correctly normalized as is.
-
-  Written by:  Tom Roberts  11/8/89
-  Made portable:  Malcolm Slaney 12/15/94 malcolm@interval.com
-  Enhanced:  Dimitrios P. Bouras  14 Jun 2006 dbouras@ieee.org
-*/
 
 static uint16_t SpiDACTxBuf[1];
 void SSI0IntHandler(void){
