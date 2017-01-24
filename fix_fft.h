@@ -58,7 +58,7 @@ int fix_fft(int fr[], int fi[], int m, int inverse);
 int fix_fftr(int f[], int m, int inverse);
 
 void fftInit(fft_vector *fft);
-void calculateFft(fft_vector *fft);
 void fftAddSample(fft_vector *fft, uint16_t sample);
+void calculateFft(fft_vector *fft);
 
 #endif /* FIX_FFT_H_ */

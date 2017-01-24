@@ -310,39 +310,27 @@ void fftInit(fft_vector *fft)
 		fft->out[i] = 0;
 	}
 }
+void fftAddSample(fft_vector *fft, uint16_t sample)
+{
+	if(!fft->valid){
+		fft->in_re[fft->counter] = sample;
+		fft->in_im[fft->counter] = 0;
+		++fft->counter;
+		if(fft->counter >= FFT_VECTOR_SIZE){
+			fft->counter = 0;
+			fft->valid = 1;
+		}
+	}
+}
 void calculateFft(fft_vector *fft)
 {
-	/*
-	size_t i;
-	vRealFFT(in_real, N);
-
-	//get the power magnitude in each bin
-	for (i = 0; i < N/2; ++i){
-		out_fft[i] = in_real[i];
-	}
-	*/
-
 	fix_fft(fft->in_re, fft->in_im, LOG2N, 0);    // perform fft on sampled points in real[i]
 	//fix_fftr(in_real, LOG2N, 0);    // perform fft on sampled points in real[i]
+
 	uint16_t i = 0;
-	 //get the power magnitude in each bin
+	//get the power magnitude in each bin
 	for ( i = 1; i < FFT_VECTOR_SIZE/2; ++i)
 	{
 		fft->out[i] = sqrtf((long)fft->in_re[i] * (long)fft->in_re[i] + (long)fft->in_im[i] * (long)fft->in_im[i]);
-	}
-}
-void fftAddSample(fft_vector *fft, uint16_t sample)
-{
-	fft->in_re[fft->counter] = sample;
-	fft->in_im[fft->counter] = 0;
-	++fft->counter;
-
-	//if(fft->counter < FFT_VECTOR_SIZE/2)
-	//	fft->out[fft->counter] = sample;
-
-	if(fft->counter >= FFT_VECTOR_SIZE){
-		calculateFft(fft);
-		fft->valid = 1;
-		fft->counter = 0;
 	}
 }

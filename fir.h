@@ -118,20 +118,12 @@ static double h[N_FIR] = {
 		-0.004314029307
 };
 */
-typedef struct
-{
-    uint32_t * const buffer;
-    int head;
-    int tail;
-    const int maxLen;
-}circBuf_t;
 
 typedef struct FIR_filter {
     int length;
-    int count;
+    int index;
     double *h;
     uint32_t delay_line[N_FIR];
-    circBuf_t delay_line_ptr;
     uint8_t valid;
     int last_filtered_sample;
 } FIR_filter;

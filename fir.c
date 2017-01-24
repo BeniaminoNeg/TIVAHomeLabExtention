@@ -12,43 +12,6 @@
 #include <string.h>
 #include "fir.h"
 
-int circBufPop(circBuf_t *c)
-{
-    // if the head isn't ahead of the tail, we don't have any characters
-    if (c->head == c->tail)
-        return -1;  // quit with an error
-
-    *data = c->buffer[c->tail];
-    c->buffer[c->tail] = 0;  // clear the data (optional)
-
-    int next = c->tail + 1;
-    if(next >= c->maxLen)
-        next = 0;
-
-    c->tail = next;
-
-    return 0;
-}
-
-int circBufPush(circBuf_t *c, uint32_t data)
-{
-    int next = c->head + 1;
-    if (next >= c->maxLen){
-        next = 0;
-        circBufPop(c);
-        next = 1;
-    }
-
-    // Cicular buffer is full
-    if (next == c->tail)
-        return -1;  // quit with an error
-
-    c->buffer[c->head] = data;
-    c->head = next;
-    return 0;
-}
-
-
 /* Initialize FIR_filter struct
  * Params:
  *  int length -- number of filter coefficients
@@ -62,25 +25,18 @@ void FIR_init(FIR_filter *filter) {
 	filter->last_filtered_sample = 0;
 	filter->valid = 0;
     filter->length = (int)(sizeof(h)/sizeof(double)) ;
-    filter->count = 0;
+    filter->index = 1;
     filter->h = h;
     int i;
     for (i=0; i < filter->length; ++i) {
     		filter->delay_line[i] = 0;
     }
-
-    filter->delay_line_ptr = {filter->delay_line, 0, 0, filter->length};
 }
 
-void FIR_put_sample(FIR_filter *filter, uint32_t input)
-{
-	circBufPush(&filter->delay_line_ptr, input)
-	int i = 0;
-	//QUEUE
-	for (i=0; i < filter->length; ++i) {
-	  	filter->delay_line[i] = filter->delay_line[i+1];
-	}
-	filter->delay_line[filter->length-1] = input;
+void FIR_put_sample(FIR_filter *filter, uint32_t input) {
+    filter->delay_line[filter->index-1] = input;
+    if(++filter->index > filter->length)
+    		filter->index = 1;
 }
 
 /* Get next filtered sample of input signsl
@@ -94,8 +50,13 @@ int FIR_get_sample(FIR_filter *filter) {
 	double result = 0.0;
     int i = 0;
 
+    //QUEUE
+
+    // Nota :
+    // n % m == n & (m - 1)
+    // where m is a power of 2.
     for (i=0; i < filter->length; ++i) {
-    	result += filter->h[i] * filter->delay_line[i];
+    		result += filter->h[i] * filter->delay_line[(filter->index + i) % filter->length];
     }
     /*
     filter->delay_line[filter->count] = input;

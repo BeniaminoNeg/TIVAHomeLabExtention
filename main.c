@@ -97,8 +97,7 @@ void InitConsole(void) {
 	UARTStdioConfig(0, 115200, 16000000);
 }
 
-void ADCInit(void)
-{
+void ADCInit(void) {
     //  ADC + GPIO (ADC Pins)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
     //SysCtlADCSpeedSet(SYSCTL_SET0_ADCSPEED_125KSPS);
@@ -134,8 +133,7 @@ void ADCInit(void)
     IntEnable(INT_TIMER0A);
 }
 
-void ADC0SS1IntHandler(void)
-{
+void ADC0SS1IntHandler(void) {
 	TimerDisable(TIMER0_BASE, TIMER_A);
     // Ack Interrupt
     ADCIntClear(ADC0_BASE, 1);
@@ -163,8 +161,7 @@ void ADC0SS1IntHandler(void)
     TimerEnable(TIMER0_BASE, TIMER_A);
 }
 
-void Timer0IntHandler(void)
-{
+void Timer0IntHandler(void) {
     TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
 }
 
@@ -204,8 +201,7 @@ void InitSW1(void) {
 	GPIOIntEnable(GPIO_PORTF_BASE, GPIO_PIN_4);     // Enable interrupt for PF4
 }
 
-int main(void)
-{
+int main(void) {
 	SysCtlClockSet(SYSCTL_SYSDIV_1|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
 
 	#if EXECUTE_FIR
@@ -216,15 +212,15 @@ int main(void)
 	fftInit(&fft);
 	#endif
 
-#if EXECUTE_DAC_OUTPUT
-SpiDACInit(&dac);
-#endif
+	#if EXECUTE_DAC_OUTPUT
+	SpiDACInit(&dac);
+	#endif
 
 	InitConsole();
 	ADCInit();
 
-	InitSW1();
-	usbDiskInit();
+	//InitSW1();
+	//usbDiskInit();
 
 	IntMasterEnable();
 
@@ -243,12 +239,13 @@ SpiDACInit(&dac);
 
 		#if EXECUTE_FFT
 		if(fft.valid){
-			fft.valid = 0;
-			uint8_t i = 0;
-			for ( i = 0; i < FFT_VECTOR_SIZE/2; ++i) {
-				UARTprintf("%d", (uint16_t)fft.out[i]);
+			calculateFft(&fft);
+			int i = 0;
+			for ( i = 0; i < FFT_VECTOR_SIZE/2; i++) {
+				UARTprintf("%d", fft.out[i]);
 				UARTprintf("\n");
 			}
+			fft.valid = 0;
 		}
 		#endif
 	}
