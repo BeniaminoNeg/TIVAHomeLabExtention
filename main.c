@@ -46,7 +46,7 @@
 #endif
 
 //FIR FILTER
-#define EXECUTE_FIR 0
+#define EXECUTE_FIR 1
 #if EXECUTE_FIR
 	#include "fir.h"
 	static FIR_filter fir;
@@ -64,6 +64,7 @@
 
 //#define ADC_SAMPLE_BUF_SIZE 128
 //uint16_t ADC_OUT[8];
+#define ADC_SAMPLE_FREQUENCY 10000
 #define  ADC0_SEQUENCER0   0
 #define ADC_SAMPLE_BUF_SIZE 1
 uint32_t ADC_OUT[ADC_SAMPLE_BUF_SIZE];
@@ -126,8 +127,7 @@ void ADCInit(void)
     //  Timer (ADC Trigger)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_TIMER0);
     TimerConfigure(TIMER0_BASE, TIMER_CFG_A_PERIODIC);
-    uint32_t frequency = 2000;//10000;
-    TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()/frequency - 1); // 10KHz
+    TimerLoadSet(TIMER0_BASE, TIMER_A, SysCtlClockGet()/ADC_SAMPLE_FREQUENCY - 1); // 10KHz
     TimerControlTrigger(TIMER0_BASE, TIMER_A, true);
     TimerEnable(TIMER0_BASE, TIMER_A);
 
@@ -142,9 +142,12 @@ void ADC0SS1IntHandler(void)
     // Read ADC Data
     ADCSequenceDataGet(ADC0_BASE, 1, ADC_OUT);
 
+    //Tolgo l'offset del circuito d'ingresso (2.5V = 2048)
+    //ADC_OUT[0] = ADC_OUT[0] - 2048;
+
     /*FIR FILTER*/
     #if EXECUTE_FIR
-    uint16_t sample = FIR_get_sample(&fir, ADC_OUT[0]);
+    FIR_put_sample(&fir, ADC_OUT[0]);
     #endif
 
     /*FFT*/
@@ -213,9 +216,9 @@ int main(void)
 	fftInit(&fft);
 	#endif
 
-	#if EXECUTE_DAC_OUTPUT
-	SpiDACInit(&dac);
-	#endif
+#if EXECUTE_DAC_OUTPUT
+SpiDACInit(&dac);
+#endif
 
 	InitConsole();
 	ADCInit();
@@ -227,9 +230,10 @@ int main(void)
 
 	while(1)
 	{
-		usbDiskMainLoop();
+		//usbDiskMainLoop();
 
 		#if EXECUTE_FIR
+	    uint16_t sample = FIR_get_sample(&fir);
 		if(fir.valid){
 			fir.valid = 0;
 			UARTprintf("%d", fir.last_filtered_sample);

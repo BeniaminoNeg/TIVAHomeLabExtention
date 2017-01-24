@@ -33,6 +33,7 @@ typedef struct spi_dac
 } spi_dac_config;
 
 void SSI0IntHandler(void);
+void uDMAErrorHandler(void);
 void SpiDACInit(spi_dac_config *dac);
 void SpiDACWrite(spi_dac_config *dac, uint16_t sample);
 

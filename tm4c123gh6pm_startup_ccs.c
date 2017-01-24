@@ -46,6 +46,8 @@ extern void Timer0IntHandler(void);
 extern void SysTickHandler(void);
 extern void USB0OTGModeIntHandler(void);
 extern void UARTStdioIntHandler(void);
+//extern void SSI0IntHandler(void);
+//extern void uDMAErrorHandler(void);
 //*****************************************************************************
 //
 // Linker variable that marks the top of the stack.
