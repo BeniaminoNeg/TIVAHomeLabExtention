@@ -44,12 +44,12 @@ void InitSPI(void) {
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
 
 	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
-	GPIOPinConfigure(GPIO_PA3_SSI0FSS);
+	//GPIOPinConfigure(GPIO_PA3_SSI0FSS);
 	GPIOPinConfigure(GPIO_PA5_SSI0TX);
-	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5 | GPIO_PIN_3 | GPIO_PIN_2);
+	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5 | GPIO_PIN_2);
 
 	// SSI0 config
-	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_3, SSI_MODE_MASTER, 1000000, 16);
+	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_3, SSI_MODE_MASTER, 10000000, 16);
 
 	// SSI0 enable
 	SSIEnable(SSI0_BASE);
@@ -93,7 +93,7 @@ void SpiDACInit(spi_dac_config *dac)
 	GPIOPinConfigure(GPIO_PA2_SSI0CLK);
 	//GPIOPinConfigure(GPIO_PA3_SSI0FSS);
 	GPIOPinConfigure(GPIO_PA5_SSI0TX);
-	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_2);
+	GPIOPinTypeSSI(GPIO_PORTA_BASE,GPIO_PIN_5|GPIO_PIN_3|GPIO_PIN_2);
 
 	// Enalbe CS pin for manual control
 	GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_3);     // Set PA3 as CS pin for SSI which is toggled manually
@@ -101,13 +101,13 @@ void SpiDACInit(spi_dac_config *dac)
 
 
 	//Il dac supporta al max 20Mhz 16bit
-	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 1000000, 16);
+	SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_3, SSI_MODE_MASTER, 20*1000000, 16);
 	SSIEnable(SSI0_BASE);
 
 }
 void SpiDACWrite(spi_dac_config *dac, uint16_t sample)
 {
-	uint16_t spiValue = 0x0000;
+	uint32_t spiValue = 0x00000000;
 	spiValue += dac->output_power_control << 12;
 	spiValue += dac->output_gain << 13;
 	spiValue += dac->buffer << 14;

@@ -39,14 +39,14 @@
 #include "usbDiskController.h"
 
 //FFT
-#define EXECUTE_FFT 0
+#define EXECUTE_FFT 1
 #if EXECUTE_FFT
 	#include "fix_fft.h"
 	static fft_vector fft;
 #endif
 
 //FIR FILTER
-#define EXECUTE_FIR 1
+#define EXECUTE_FIR 0
 #if EXECUTE_FIR
 	#include "fir.h"
 	static FIR_filter fir;
@@ -64,7 +64,7 @@
 
 //#define ADC_SAMPLE_BUF_SIZE 128
 //uint16_t ADC_OUT[8];
-#define ADC_SAMPLE_FREQUENCY 10000
+#define ADC_SAMPLE_FREQUENCY 192000//50000
 #define  ADC0_SEQUENCER0   0
 #define ADC_SAMPLE_BUF_SIZE 1
 uint32_t ADC_OUT[ADC_SAMPLE_BUF_SIZE];
@@ -100,24 +100,24 @@ void InitConsole(void) {
 void ADCInit(void) {
     //  ADC + GPIO (ADC Pins)
     SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
-    //SysCtlADCSpeedSet(SYSCTL_SET0_ADCSPEED_125KSPS);
+    //SysCtlADCSpeedSet(SYSCTL_ADCSPEED_125KSPS);
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
-    	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
 
-    	GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_0);
-    	GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_1);
-    	GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_2);
-    	GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);
-    	GPIOPinTypeADC(GPIO_PORTD_BASE, GPIO_PIN_0);
-    	GPIOPinTypeADC(GPIO_PORTD_BASE, GPIO_PIN_1);
-    	GPIOPinTypeADC(GPIO_PORTD_BASE, GPIO_PIN_2);
-    	GPIOPinTypeADC(GPIO_PORTD_BASE, GPIO_PIN_3);
+    GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_0);
+    GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_1);
+    GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_2);
+    GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_3);
+    GPIOPinTypeADC(GPIO_PORTD_BASE, GPIO_PIN_0);
+    GPIOPinTypeADC(GPIO_PORTD_BASE, GPIO_PIN_1);
+    GPIOPinTypeADC(GPIO_PORTD_BASE, GPIO_PIN_2);
+    GPIOPinTypeADC(GPIO_PORTD_BASE, GPIO_PIN_3);
     SysCtlDelay(10);
 
     ADCSequenceDisable(ADC0_BASE, 1);
     ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_TIMER, 0);
     ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADC_CTL_IE | ADC_CTL_END);
-    ADCHardwareOversampleConfigure(ADC0_BASE, 64);
+    //ADCHardwareOversampleConfigure(ADC0_BASE, 64);
 
     ADCSequenceEnable(ADC0_BASE, 1);
     ADCIntEnable(ADC0_BASE, 1);
@@ -133,8 +133,9 @@ void ADCInit(void) {
     IntEnable(INT_TIMER0A);
 }
 
+//static uint8_t toggle = 0xff;
 void ADC0SS1IntHandler(void) {
-	TimerDisable(TIMER0_BASE, TIMER_A);
+	//TimerDisable(TIMER0_BASE, TIMER_A);
     // Ack Interrupt
     ADCIntClear(ADC0_BASE, 1);
     // Read ADC Data
@@ -143,6 +144,9 @@ void ADC0SS1IntHandler(void) {
     //Tolgo l'offset del circuito d'ingresso (2.5V = 2048)
     //ADC_OUT[0] = ADC_OUT[0] - 2048;
 
+	//GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, toggle);
+	//toggle = toggle == 0x00 ? 0xff : 0x00;
+	//SysCtlDelay(80000);
     /*FIR FILTER*/
     #if EXECUTE_FIR
     FIR_put_sample(&fir, ADC_OUT[0]);
@@ -153,12 +157,7 @@ void ADC0SS1IntHandler(void) {
     fftAddSample(&fft, ADC_OUT[0]);
     #endif
 
-    /*SPI DAC*/
-	#if EXECUTE_DAC_OUTPUT
-    SpiDACWrite(&dac, (uint16_t)ADC_OUT[0]);
-	#endif
-
-    TimerEnable(TIMER0_BASE, TIMER_A);
+    //TimerEnable(TIMER0_BASE, TIMER_A);
 }
 
 void Timer0IntHandler(void) {
@@ -202,7 +201,8 @@ void InitSW1(void) {
 }
 
 int main(void) {
-	SysCtlClockSet(SYSCTL_SYSDIV_1|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
+	SysCtlClockSet(SYSCTL_SYSDIV_2_5|SYSCTL_USE_PLL|SYSCTL_XTAL_16MHZ|SYSCTL_OSC_MAIN);
+	//SysCtlClockSet(SYSCTL_SYSDIV_1|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
 
 	#if EXECUTE_FIR
 	FIR_init(&fir);
@@ -218,6 +218,11 @@ int main(void) {
 
 	InitConsole();
 	ADCInit();
+
+
+	//SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+	//GPIOPinTypeGPIOOutput(GPIO_PORTA_BASE, GPIO_PIN_3);
+	//GPIOPinWrite(GPIO_PORTA_BASE, GPIO_PIN_3, 0x00);
 
 	//InitSW1();
 	//usbDiskInit();
@@ -247,6 +252,11 @@ int main(void) {
 			}
 			fft.valid = 0;
 		}
+		#endif
+
+	    /*SPI DAC*/
+		#if EXECUTE_DAC_OUTPUT
+	    SpiDACWrite(&dac, (uint16_t)ADC_OUT[0]);
 		#endif
 	}
 }
